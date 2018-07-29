@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: cama-proxy
+message: |-
+  cama-proxy has been deployed.
+metadata:
+  annotations:
+    openshift.io/display-name: cama-proxy          
+    tags: quickstart
+    template.openshift.io/long-description: This template is a cama proxy application.
+  name: cama-proxy    
+
+parameters:  
+  - name: LISTEN_PORT
+    displayName: "Port"
+    value: "8899"
+    required: true
+  - name: CAMA_ENDPOINT
+    displayName: "CAMA Address"
+    value: "127.0.0.1:8090"
+    required: true
+
+objects:    
+- apiVersion: v1    
+  kind: DeploymentConfig
+  metadata:
+    name: cama-proxy
+  spec:
+    replicas: 1
+    selector:
+      name: cama-proxy
+    template:
+      metadata:
+        labels:
+          name: cama-proxy
+        name: cama-proxy
+      spec:
+        nodeSelector:        
+          "prometheus": "true"
+        containers:
+        - image: offerlineregistry.dataman-inc.com:5000/openshift/cama-proxy
+          name: cama-proxy
+          ports:
+          - containerPort: ${LISTEN_PORT}
+          env:
+          - name: CAMA_ENDPOINT
+            value: ${CAMA_ENDPOINT}
+- apiVersion:
+  kind: Service
+  metadata:
+    labels:
+      name: cama-proxy
+    name: cama-proxy
+  spec:
+    clusterIP: None
+    selector:
+      name: cama-proxy
+    ports:
+    - port: ${LISTEN_PORT}
+    type: ClusterIP
